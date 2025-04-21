@@ -11,19 +11,42 @@ def parse_channel_page(channel):
     posts = soup.find_all('div', class_='tgme_widget_message_wrap')
     return posts[-1] if posts else None
 
-def extract_text_preserving_newlines(tag):
-    lines = []
+def extract_text_with_links(tag):
+    parts = []
+
+    prev_was_text = False
+
     for elem in tag.descendants:
         if elem.name == 'br':
-            lines.append('\n')
-        elif isinstance(elem, str):
-            lines.append(elem)
-    return ''.join(lines).strip()
+            parts.append('\n')
+            prev_was_text = False
 
+        elif elem.name == 'a' and 'href' in elem.attrs:
+            text = ''.join(elem.stripped_strings)
+            href = elem['href']
+            link = f'[{text}]({href})'
+
+            # Добавим пробел перед ссылкой, если предыдущий элемент был текстом и не заканчивается пробелом/переносом
+            if parts and not re.search(r'[\s\n]$', parts[-1]):
+                parts.append(' ')
+            parts.append(link)
+            prev_was_text = True
+
+        elif isinstance(elem, str):
+            # Добавим пробел после ссылки, если был идущий подряд текст
+            if parts and isinstance(parts[-1], str) and not re.search(r'[\s\n]$', parts[-1]):
+                parts.append(' ')
+            parts.append(elem)
+            prev_was_text = True
+
+    # Удалим двойные пробелы
+    result = re.sub(r'[ ]{2,}', ' ', ''.join(parts)).strip()
+
+    return result
 
 def extract_post_data(post_html, channel):
     text_div = post_html.find('div', class_='tgme_widget_message_text')
-    text = extract_text_preserving_newlines(text_div) if text_div else '[Без текста]'
+    text = extract_text_with_links(text_div) if text_div else '[Без текста]'
 
     link_tag = post_html.find('a', class_='tgme_widget_message_date')
     post_link = link_tag['href'] if link_tag else ''
