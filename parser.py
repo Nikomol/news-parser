@@ -44,9 +44,16 @@ def extract_text_with_links(tag):
 
     return result
 
+def postprocess_text_markdown(text):
+    # Ссылки уже обработаны. Теперь добавим хештеги и упоминания
+    text = re.sub(r'(?<!\w)(@\w+)', r'[\1](https://t.me/\1)', text)
+    text = re.sub(r'(?<!\w)(#\w+)', r'[\1](https://t.me/hashtag/\1)', text)
+    return text
+
 def extract_post_data(post_html, channel):
     text_div = post_html.find('div', class_='tgme_widget_message_text')
-    text = extract_text_with_links(text_div) if text_div else '[Без текста]'
+    text = extract_text_with_links(text_div)
+    text = postprocess_text_markdown(text)
 
     link_tag = post_html.find('a', class_='tgme_widget_message_date')
     post_link = link_tag['href'] if link_tag else ''

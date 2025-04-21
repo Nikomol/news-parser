@@ -2,8 +2,9 @@
 import time
 from parser import parse_channel_page, extract_post_data
 from telegram_sender import send_to_telegram
+from config import channels, KEYWORDS
+from filters import is_post_relevant 
 
-channels = ['teleact54', 'leoday', 'poslanyheart', 'mskint', 'novosti_nsk_test']
 last_post_ids = {}
 
 def initialize_channels():
@@ -29,8 +30,11 @@ def monitor_channels():
 
                 post = extract_post_data(post_html, ch)
                 if post['id'] != last_post_ids.get(ch):
-                    print(f"📨 @{ch}: новый пост ID {post['id']}")
-                    send_to_telegram(post)
+                    if is_post_relevant(post['text'], KEYWORDS):  # 🔍 фильтрация здесь
+                        print(f"📨 @{ch}: новый релевантный пост ID {post['id']}")
+                        send_to_telegram(post)
+                    else:
+                        print(f"⛔ @{ch}: пост ID {post['id']} не прошёл фильтр")
                     last_post_ids[ch] = post['id']
             except Exception as e:
                 print(f"❌ Ошибка при обработке @{ch}: {e}")

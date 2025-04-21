@@ -1,9 +1,7 @@
 #Отправка сообщений в Telegram
 import requests
 import json
-
-bot_token = '1906657023:AAHh5FWI_O0WS1Efhc4kpncny0jJ4zIY0kY'
-chat_id = '@parsernsk_test'
+from config import bot_token, chat_id
 
 def compose_message(post):
     file_note = "\n\n📎 *В оригинальном посте прикреплён файл.*" if post['has_file'] else ""
