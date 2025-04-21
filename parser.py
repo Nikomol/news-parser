@@ -11,9 +11,19 @@ def parse_channel_page(channel):
     posts = soup.find_all('div', class_='tgme_widget_message_wrap')
     return posts[-1] if posts else None
 
+def extract_text_preserving_newlines(tag):
+    lines = []
+    for elem in tag.descendants:
+        if elem.name == 'br':
+            lines.append('\n')
+        elif isinstance(elem, str):
+            lines.append(elem)
+    return ''.join(lines).strip()
+
+
 def extract_post_data(post_html, channel):
     text_div = post_html.find('div', class_='tgme_widget_message_text')
-    text = text_div.get_text(separator='\n', strip=True) if text_div else '[Без текста]'
+    text = extract_text_preserving_newlines(text_div) if text_div else '[Без текста]'
 
     link_tag = post_html.find('a', class_='tgme_widget_message_date')
     post_link = link_tag['href'] if link_tag else ''
