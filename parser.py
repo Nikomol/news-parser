@@ -54,34 +54,27 @@ def postprocess_text_markdown(text):
     return text
 
 def extract_post_data(post_html, channel):
+    # Обработка текста (с проверкой на None)
     text_div = post_html.find('div', class_='tgme_widget_message_text')
-    text = extract_text_with_links(text_div)
+    text = extract_text_with_links(text_div) if text_div else "[]"
     text = postprocess_text_markdown(text)
 
+    # Остальной код без изменений
     link_tag = post_html.find('a', class_='tgme_widget_message_date')
     post_link = link_tag['href'] if link_tag else ''
     post_id_match = re.search(r'/(\d+)$', post_link)
     post_id = post_id_match.group(1) if post_id_match else None
 
-    # Извлекаем все фото
     photo_divs = post_html.find_all('a', class_='tgme_widget_message_photo_wrap')
-    photo_urls = []
-    for photo_div in photo_divs:
-        if 'style' in photo_div.attrs:
-            style = photo_div['style']
-            match = re.search(r"url\('(.*?)'\)", style)
-            if match:
-                photo_urls.append(match.group(1))
+    photo_urls = [re.search(r"url\('(.*?)'\)", div['style']).group(1) 
+                 for div in photo_divs if 'style' in div.attrs]
 
-    # Признак наличия файла
-    has_file = post_html.find('div', class_='tgme_widget_message_document') is not None
-    if not has_file and '📎' in text:
-        has_file = True
+    has_file = post_html.find('div', class_='tgme_widget_message_document') is not None or '📎' in text
 
     return {
         'id': post_id,
         'text': text,
-        'photo_urls': photo_urls,  # теперь это список всех изображений
+        'photo_urls': photo_urls,
         'link': post_link,
         'channel': channel,
         'has_file': has_file
