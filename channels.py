@@ -10,14 +10,22 @@ last_post_ids = {}
 def initialize_channels():
     print("⏳ Инициализация...")
     for ch in channels:
-        post_html = parse_channel_page(ch)
-        if post_html:
+        try:
+            post_html = parse_channel_page(ch)
+            if not post_html:
+                print(f"⚠️ Не удалось получить контент из @{ch}")
+                continue
+                
             post = extract_post_data(post_html, ch)
-            last_post_ids[ch] = post['id']
-            print(f"🔒 @{ch}: последний пост ID {post['id']}")
-        else:
+            if post:
+                last_post_ids[ch] = post['id']
+                print(f"🔒 @{ch}: последний пост ID {post['id']}")
+            else:
+                print(f"⚠️ Не удалось извлечь данные из @{ch}")
+                
+        except Exception as e:
+            print(f"❌ Критическая ошибка в @{ch}: {str(e)}")
             last_post_ids[ch] = None
-            print(f"⚠️ Не удалось получить посты из @{ch}")
 
 def monitor_channels():
     print("🚀 Мониторинг каналов...")
@@ -30,7 +38,8 @@ def monitor_channels():
 
                 post = extract_post_data(post_html, ch)
                 if post['id'] != last_post_ids.get(ch):
-                    if is_post_relevant(post['text'], KEYWORDS):  # 🔍 фильтрация здесь
+                    #if is_post_relevant(post['text'], KEYWORDS):  # 🔍 фильтрация здесь
+                    if(post['text']):
                         print(f"📨 @{ch}: новый релевантный пост ID {post['id']}")
                         send_to_telegram(post)
                     else:
