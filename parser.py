@@ -45,9 +45,12 @@ def extract_text_with_links(tag):
     return result
 
 def postprocess_text_markdown(text):
-    # Ссылки уже обработаны. Теперь добавим хештеги и упоминания
+    # Обрабатываем упоминания (@username)
     text = re.sub(r'(?<!\w)(@\w+)', r'[\1](https://t.me/\1)', text)
-    text = re.sub(r'(?<!\w)(#\w+)', r'[\1](https://t.me/hashtag/\1)', text)
+    
+    # Обрабатываем хештеги (#tag) - БЕЗ создания ссылок
+    # Просто экранируем их, чтобы Telegram обработал их сам
+    text = re.sub(r'(?<!\w)(#\w+)', r'\1', text)
     return text
 
 def extract_post_data(post_html, channel):
