@@ -12,44 +12,49 @@ def parse_channel_page(channel):
     return posts[-1] if posts else None
 
 def extract_text_with_links(tag):
+    if not tag:
+        return ""
+    
     parts = []
+    processed_elements = set()  # Для отслеживания уже обработанных элементов
 
-    prev_was_text = False
+    for elem in tag.children:
+        if id(elem) in processed_elements:
+            continue
+        processed_elements.add(id(elem))
 
-    for elem in tag.descendants:
         if elem.name == 'br':
             parts.append('\n')
-            prev_was_text = False
-
         elif elem.name == 'a' and 'href' in elem.attrs:
             text = ''.join(elem.stripped_strings)
             href = elem['href']
-            link = f'[{text}]({href})'
-
-            # Добавим пробел перед ссылкой, если предыдущий элемент был текстом и не заканчивается пробелом/переносом
-            if parts and not re.search(r'[\s\n]$', parts[-1]):
+            link = f'[{text}]({href})' if text != href else href
+            
+            if parts and not parts[-1].endswith(('\n', ' ')):
                 parts.append(' ')
             parts.append(link)
-            prev_was_text = True
-
         elif isinstance(elem, str):
-            # Добавим пробел после ссылки, если был идущий подряд текст
-            if parts and isinstance(parts[-1], str) and not re.search(r'[\s\n]$', parts[-1]):
-                parts.append(' ')
-            parts.append(elem)
-            prev_was_text = True
+            text = elem.strip()
+            if text:
+                if parts and not parts[-1].endswith(('\n', ' ')):
+                    parts.append(' ')
+                parts.append(text)
+        else:
+            # Рекурсивная обработка вложенных элементов
+            nested_text = extract_text_with_links(elem)
+            if nested_text:
+                if parts and not parts[-1].endswith(('\n', ' ')):
+                    parts.append(' ')
+                parts.append(nested_text)
 
-    # Удалим двойные пробелы
-    result = re.sub(r'[ ]{2,}', ' ', ''.join(parts)).strip()
-
+    result = ''.join(parts).strip()
+    result = re.sub(r'[ ]{2,}', ' ', result)
     return result
 
 def postprocess_text_markdown(text):
-    # Удаляем голые @username, если они уже есть в виде [@username](https://t.me/username)
+    # Удаляем голые @username, если они не являются частью ссылки
     text = re.sub(r'(?<!\w)@(\w+)(?![^[]*\])', '', text)
-    
-    # Обрабатываем хештеги (#tag) — оставляем как есть
-    text = re.sub(r'(?<!\w)(#\w+)', r'\1', text)
+    # Оставляем хештеги как есть (они не должны дублироваться после extract_text_with_links)
     return text
 
 def extract_post_data(post_html, channel):
