@@ -30,14 +30,20 @@ def shorten_text(text, max_length=900):
 
 def compose_message(post, is_short=False):
     file_note = "\n\n📎 *В оригинальном посте прикреплён файл.*" if post['has_file'] else ""
-    source = f"\n\n🔗 [Источник]({post['link']})"
     
     text = post['text']
     if is_short and len(text) > 300:  # Сокращаем только если текст длинный
         text = shorten_text(text)
     
-    return f"\n{text}{file_note}{source}"
-
+    if post.get('has_video', False):  # Если есть видео
+        # Делаем всю надпись о видео ссылкой на источник
+        video_note = f"\n\n🎥 [В источнике есть видео]({post['link']})"
+        return f"\n{text}{file_note}{video_note}"
+    else:
+        # Стандартный вариант с источником отдельно
+        source = f"\n\n🔗 [Источник]({post['link']})"
+        return f"\n{text}{file_note}{source}"
+    
 def send_to_telegram(post):
     has_media = bool(post['photo_urls'])
     message = compose_message(post, is_short=has_media)

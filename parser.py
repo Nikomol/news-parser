@@ -73,6 +73,10 @@ def extract_post_data(post_html, channel):
     photo_urls = [re.search(r"url\('(.*?)'\)", div['style']).group(1) 
                  for div in photo_divs if 'style' in div.attrs]
 
+ # Проверяем наличие видео
+    video_div = post_html.find('div', class_='tgme_widget_message_video_wrap')
+    has_video = video_div is not None
+    
     has_file = post_html.find('div', class_='tgme_widget_message_document') is not None or '📎' in text
 
     return {
@@ -81,5 +85,6 @@ def extract_post_data(post_html, channel):
         'photo_urls': photo_urls,
         'link': post_link,
         'channel': channel,
-        'has_file': has_file
+        'has_file': has_file,
+        'has_video': has_video  # Добавляем флаг наличия видео
     }
