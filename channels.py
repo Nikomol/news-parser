@@ -38,8 +38,8 @@ def monitor_channels():
 
                 post = extract_post_data(post_html, ch)
                 if post['id'] != last_post_ids.get(ch):
-                    #if is_post_relevant(post['text'], KEYWORDS):  # 🔍 фильтрация здесь
-                    if(post['text']):
+                    if is_post_relevant(post['text'], KEYWORDS):  # 🔍 фильтрация здесь
+                    #if(post['text']):
                         print(f"📨 @{ch}: новый релевантный пост ID {post['id']}")
                         send_to_telegram(post)
                     else:
